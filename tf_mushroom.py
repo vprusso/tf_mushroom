@@ -143,7 +143,7 @@ if __name__ == "__main__":
         target_column=0)
 
     # Specify that all features have real-value data
-    feature_columns = [tf.contrib.layers.real_valued_column("", dimension=2)]
+    feature_columns = [tf.contrib.layers.real_valued_column("", dimension=98)]
 
     # Build 3 layer DNN with 10, 20, 10 units respectively.
     classifier = tf.contrib.learn.DNNClassifier(
