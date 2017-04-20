@@ -71,17 +71,54 @@ def prepare_data(data_file_name):
 
     # Append onto the header row the information about how many
     # columns and rows are in each file as TensorFlow requires.
-    open("train_output.csv", "w").write(str(num_train_entries) +
-                                        "," + str(num_train_features) +
-                                        "," + open("train_temp.csv").read())
+    open("mushroom_train.csv", "w").write(str(num_train_entries) +
+                                          "," + str(num_train_features) +
+                                          "," + open("train_temp.csv").read())
 
-    open("test_output.csv", "w").write(str(num_test_entries) +
-                                       "," + str(num_test_features) +
-                                       "," + open("test_temp.csv").read())
+    open("mushroom_test.csv", "w").write(str(num_test_entries) +
+                                         "," + str(num_test_features) +
+                                         "," + open("test_temp.csv").read())
 
     # Finally, remove the temporary CSV files that were generated above.
     os.remove("train_temp.csv")
     os.remove("test_temp.csv")
+
+
+# Define the test inputs
+def get_test_inputs():
+    x = tf.constant(test_set.data)
+    y = tf.constant(test_set.target)
+
+    return x, y
+
+
+# Define the training inputs
+def get_train_inputs():
+    x = tf.constant(training_set.data)
+    y = tf.constant(training_set.target)
+
+    return x, y
+
+
+# Classify two new mushroom samples. (expect output: [0,1]),
+# i.e. poisonous, edible.
+def new_samples():
+    return np.array([[0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+                      1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+                      0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+                      0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+                      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1,
+                      0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      1, 0, 1, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+                      0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+                      0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0,
+                      0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0,
+                      0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                      0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0,
+                      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
+                      0, 0, 0, 0, 0, 0, 1]], dtype=np.int)
 
 
 if __name__ == "__main__":
@@ -94,13 +131,13 @@ if __name__ == "__main__":
 
     # Load datasets.
     training_set = tf.contrib.learn.datasets.base.load_csv_with_header(
-        filename='train_output.csv',
+        filename='mushroom_train.csv',
         target_dtype=np.int,
         features_dtype=np.int,
         target_column=0)
 
     test_set = tf.contrib.learn.datasets.base.load_csv_with_header(
-        filename='test_output.csv',
+        filename='mushroom_test.csv',
         target_dtype=np.int,
         features_dtype=np.int,
         target_column=0)
@@ -116,28 +153,15 @@ if __name__ == "__main__":
         model_dir="/tmp/mushroom_model")
 
     # Fit model.
-    classifier.fit(x=training_set.data,
-                   y=training_set.target,
-                   steps=2000)
+    classifier.fit(input_fn=get_train_inputs, steps=2000)
 
     # Evaluate accuracy.
-    accuracy_score = classifier.evaluate(
-        x=test_set.data,
-        y=test_set.target)["accuracy"]
+    accuracy_score = classifier.evaluate(input_fn=get_test_inputs,
+                                         steps=1)["accuracy"]
 
-    print('Accuracy: {0:f}'.format(accuracy_score))
+    print("\nTest Accuracy: {0:f}\n".format(accuracy_score))
 
-    # Classify two new mushroom samples.
-    def new_samples():
-        return np.array([[0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
-                          1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
-                          0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-                          0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
-                          0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-                          0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0,
-                          0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-                          1, 0, 0, 0, 0, 1, 0]], dtype=np.int)
-
+    # Test on two mushroom samples.
     predictions = list(classifier.predict(input_fn=new_samples))
 
     print("New Samples, Class Predictions:    {}\n"
